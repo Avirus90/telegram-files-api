@@ -1,0 +1,670 @@
+<!DOCTYPE html>
+<html lang="hi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Telegram Files Viewer</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        :root {
+            --primary: #667eea;
+            --secondary: #764ba2;
+        }
+        
+        body {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        
+        .container {
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 20px;
+            padding: 30px;
+            margin-top: 20px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            backdrop-filter: blur(10px);
+        }
+        
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+            padding-bottom: 20px;
+            border-bottom: 2px solid #f0f0f0;
+        }
+        
+        .header h1 {
+            color: var(--primary);
+            font-weight: bold;
+            margin-bottom: 10px;
+        }
+        
+        .header p {
+            color: #666;
+            font-size: 1.1rem;
+        }
+        
+        .search-box {
+            background: white;
+            border-radius: 15px;
+            padding: 25px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+            margin-bottom: 30px;
+        }
+        
+        .channel-input {
+            font-size: 1.1rem;
+            padding: 15px;
+            border: 2px solid #e0e0e0;
+            border-radius: 10px;
+            transition: all 0.3s;
+        }
+        
+        .channel-input:focus {
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.2);
+        }
+        
+        .btn-load {
+            background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            border-radius: 10px;
+            font-size: 1.1rem;
+            font-weight: bold;
+            transition: all 0.3s;
+        }
+        
+        .btn-load:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 10px 20px rgba(102, 126, 234, 0.3);
+        }
+        
+        .btn-load:disabled {
+            opacity: 0.7;
+            cursor: not-allowed;
+        }
+        
+        .stats-card {
+            background: white;
+            border-radius: 15px;
+            padding: 20px;
+            text-align: center;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.08);
+            border: 1px solid #f0f0f0;
+            transition: transform 0.3s;
+        }
+        
+        .stats-card:hover {
+            transform: translateY(-5px);
+        }
+        
+        .stats-number {
+            font-size: 2.5rem;
+            font-weight: bold;
+            color: var(--primary);
+            margin-bottom: 10px;
+        }
+        
+        .stats-label {
+            color: #666;
+            font-size: 0.9rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+        
+        .file-card {
+            background: white;
+            border-radius: 15px;
+            padding: 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.08);
+            border: 1px solid #f0f0f0;
+            transition: all 0.3s;
+            height: 100%;
+        }
+        
+        .file-card:hover {
+            transform: translateY(-10px);
+            box-shadow: 0 15px 30px rgba(0, 0, 0, 0.15);
+            border-color: var(--primary);
+        }
+        
+        .file-icon {
+            font-size: 3rem;
+            margin-bottom: 15px;
+            color: var(--primary);
+        }
+        
+        .file-name {
+            font-weight: bold;
+            color: #333;
+            margin-bottom: 10px;
+            font-size: 1.1rem;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+        }
+        
+        .file-meta {
+            color: #666;
+            font-size: 0.9rem;
+            margin-bottom: 15px;
+        }
+        
+        .badge-type {
+            background: var(--primary);
+            color: white;
+            padding: 5px 10px;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            font-weight: normal;
+        }
+        
+        .loading-spinner {
+            width: 80px;
+            height: 80px;
+            border: 8px solid #f3f3f3;
+            border-top: 8px solid var(--primary);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin: 40px auto;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        .error-alert {
+            border-left: 5px solid #dc3545;
+            animation: slideIn 0.3s ease;
+        }
+        
+        @keyframes slideIn {
+            from { opacity: 0; transform: translateX(-20px); }
+            to { opacity: 1; transform: translateX(0); }
+        }
+        
+        .footer {
+            text-align: center;
+            margin-top: 40px;
+            padding-top: 20px;
+            border-top: 1px solid #eee;
+            color: #666;
+            font-size: 0.9rem;
+        }
+        
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+            color: #666;
+        }
+        
+        .empty-state i {
+            font-size: 4rem;
+            color: #ddd;
+            margin-bottom: 20px;
+        }
+        
+        /* Responsive */
+        @media (max-width: 768px) {
+            .container {
+                padding: 15px;
+            }
+            
+            .header h1 {
+                font-size: 1.8rem;
+            }
+            
+            .channel-input, .btn-load {
+                width: 100%;
+                margin-bottom: 10px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Header -->
+        <div class="header">
+            <h1><i class="fas fa-file-archive"></i> Telegram Files Viewer</h1>
+            <p class="lead">Fetch and view files from your Telegram channel instantly</p>
+        </div>
+        
+        <!-- Search Box -->
+        <div class="search-box">
+            <div class="row align-items-center">
+                <div class="col-md-8">
+                    <input type="text" 
+                           class="form-control channel-input" 
+                           id="channelInput" 
+                           placeholder="Enter channel username (e.g., @Anon27199)" 
+                           value="@Anon27199">
+                    <small class="text-muted mt-2 d-block">
+                        <i class="fas fa-info-circle"></i> Make sure your bot is admin in the channel
+                    </small>
+                </div>
+                <div class="col-md-4">
+                    <button class="btn btn-load w-100" onclick="loadFiles()" id="loadBtn">
+                        <span id="btnText"><i class="fas fa-search"></i> Load Files</span>
+                        <span id="btnSpinner" class="spinner-border spinner-border-sm" style="display: none;"></span>
+                    </button>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Stats -->
+        <div class="row" id="statsSection" style="display: none;">
+            <div class="col-md-3 mb-3">
+                <div class="stats-card">
+                    <div class="stats-number" id="totalFiles">0</div>
+                    <div class="stats-label">Total Files</div>
+                </div>
+            </div>
+            <div class="col-md-3 mb-3">
+                <div class="stats-card">
+                    <div class="stats-number" id="channelName">-</div>
+                    <div class="stats-label">Channel</div>
+                </div>
+            </div>
+            <div class="col-md-3 mb-3">
+                <div class="stats-card">
+                    <div class="stats-number" id="apiStatus">✅</div>
+                    <div class="stats-label">API Status</div>
+                </div>
+            </div>
+            <div class="col-md-3 mb-3">
+                <div class="stats-card">
+                    <div class="stats-number" id="lastUpdated">-</div>
+                    <div class="stats-label">Last Updated</div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Loading -->
+        <div id="loadingSection" class="text-center" style="display: none;">
+            <div class="loading-spinner"></div>
+            <h4 class="mt-4">Fetching files from Telegram...</h4>
+            <p class="text-muted">This may take a few moments</p>
+        </div>
+        
+        <!-- Error Alert -->
+        <div id="errorAlert" class="alert alert-danger error-alert" style="display: none;">
+            <button type="button" class="btn-close float-end" onclick="hideError()"></button>
+            <h5><i class="fas fa-exclamation-triangle"></i> Error</h5>
+            <p id="errorText"></p>
+            <small id="errorHint" class="d-block mt-2"></small>
+        </div>
+        
+        <!-- Files Container -->
+        <div id="filesContainer" class="row mt-4"></div>
+        
+        <!-- Empty State (Initially shown) -->
+        <div id="emptyState" class="empty-state">
+            <i class="fas fa-cloud-download-alt"></i>
+            <h3>No Files Loaded Yet</h3>
+            <p>Enter a channel username above and click "Load Files" to get started</p>
+            <p class="text-muted mt-3">
+                <i class="fas fa-lightbulb"></i> 
+                Tip: Make sure your bot (@StorageBimbaBot) is admin in the channel
+            </p>
+        </div>
+        
+        <!-- Footer -->
+        <div class="footer">
+            <p>
+                Powered by <strong>@StorageBimbaBot</strong> | 
+                API: <code id="apiUrl">https://telegram-files-api.vercel.app</code> | 
+                <a href="javascript:void(0)" onclick="showApiInfo()"><i class="fas fa-code"></i> API Info</a>
+            </p>
+            <p class="mt-2">
+                <small>Deployed on GitHub Pages • Made with ❤️ for Telegram Users</small>
+            </p>
+        </div>
+    </div>
+    
+    <!-- API Info Modal -->
+    <div class="modal fade" id="apiModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title"><i class="fas fa-code"></i> API Information</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <h6>Backend API Endpoint:</h6>
+                    <div class="input-group mb-3">
+                        <input type="text" class="form-control" id="apiEndpoint" readonly>
+                        <button class="btn btn-outline-secondary" onclick="copyApiUrl()">
+                            <i class="fas fa-copy"></i>
+                        </button>
+                    </div>
+                    
+                    <h6>Available Endpoints:</h6>
+                    <ul class="list-group mb-3">
+                        <li class="list-group-item">
+                            <code>/api/test</code>
+                            <span class="badge bg-info float-end">GET</span>
+                            <div class="small text-muted">Test if API is working</div>
+                        </li>
+                        <li class="list-group-item">
+                            <code>/api/files?channel=@username</code>
+                            <span class="badge bg-success float-end">GET</span>
+                            <div class="small text-muted">Get files from channel</div>
+                        </li>
+                    </ul>
+                    
+                    <h6>Example Usage:</h6>
+                    <pre class="bg-light p-3 rounded"><code>fetch('https://telegram-files-api.vercel.app/api/files?channel=@Anon27199')
+  .then(response => response.json())
+  .then(data => console.log(data))</code></pre>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    
+    <script>
+        // ==================== CONFIGURATION ====================
+        // ✅ YAHAN APNA BACKEND API URL DAALEN
+        // Vercel par deploy kiya hai to woh URL yahan daalein
+        const API_BASE_URL = 'https://telegram-files-api.vercel.app';
+        
+        // ==================== VARIABLES ====================
+        let currentFiles = [];
+        
+        // ==================== DOM ELEMENTS ====================
+        const elements = {
+            loading: document.getElementById('loadingSection'),
+            errorAlert: document.getElementById('errorAlert'),
+            errorText: document.getElementById('errorText'),
+            errorHint: document.getElementById('errorHint'),
+            filesContainer: document.getElementById('filesContainer'),
+            emptyState: document.getElementById('emptyState'),
+            statsSection: document.getElementById('statsSection'),
+            totalFiles: document.getElementById('totalFiles'),
+            channelName: document.getElementById('channelName'),
+            apiStatus: document.getElementById('apiStatus'),
+            lastUpdated: document.getElementById('lastUpdated'),
+            loadBtn: document.getElementById('loadBtn'),
+            btnText: document.getElementById('btnText'),
+            btnSpinner: document.getElementById('btnSpinner'),
+            apiUrl: document.getElementById('apiUrl'),
+            apiEndpoint: document.getElementById('apiEndpoint')
+        };
+        
+        // Set API URL in footer and modal
+        elements.apiUrl.textContent = API_BASE_URL;
+        elements.apiEndpoint.value = API_BASE_URL;
+        
+        // ==================== FILE TYPE ICONS ====================
+        const fileIcons = {
+            'image': { icon: 'fa-image', color: '#0dcaf0', name: 'Image' },
+            'video': { icon: 'fa-video', color: '#dc3545', name: 'Video' },
+            'audio': { icon: 'fa-music', color: '#198754', name: 'Audio' },
+            'document': { icon: 'fa-file-pdf', color: '#ffc107', name: 'Document' },
+            'unknown': { icon: 'fa-file', color: '#6c757d', name: 'File' }
+        };
+        
+        // ==================== HELPER FUNCTIONS ====================
+        
+        function formatFileSize(bytes) {
+            if (!bytes || bytes === 0) return 'Unknown size';
+            if (bytes < 1024) return bytes + ' B';
+            if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' KB';
+            if (bytes < 1024 * 1024 * 1024) return (bytes / (1024 * 1024)).toFixed(2) + ' MB';
+            return (bytes / (1024 * 1024 * 1024)).toFixed(2) + ' GB';
+        }
+        
+        function formatDate(dateString) {
+            try {
+                const date = new Date(dateString);
+                return date.toLocaleString('hi-IN', {
+                    day: '2-digit',
+                    month: 'short',
+                    year: 'numeric',
+                    hour: '2-digit',
+                    minute: '2-digit'
+                });
+            } catch (e) {
+                return dateString;
+            }
+        }
+        
+        function getFileTypeFromMime(mimeType) {
+            if (!mimeType) return 'unknown';
+            if (mimeType.startsWith('image/')) return 'image';
+            if (mimeType.startsWith('video/')) return 'video';
+            if (mimeType.startsWith('audio/')) return 'audio';
+            if (mimeType.includes('pdf')) return 'document';
+            if (mimeType.includes('word') || mimeType.includes('document')) return 'document';
+            return 'document';
+        }
+        
+        // ==================== UI FUNCTIONS ====================
+        
+        function showLoading() {
+            elements.loading.style.display = 'block';
+            elements.emptyState.style.display = 'none';
+            elements.filesContainer.innerHTML = '';
+            elements.statsSection.style.display = 'none';
+            elements.btnText.style.display = 'none';
+            elements.btnSpinner.style.display = 'inline-block';
+            elements.loadBtn.disabled = true;
+            hideError();
+        }
+        
+        function hideLoading() {
+            elements.loading.style.display = 'none';
+            elements.btnText.style.display = 'inline';
+            elements.btnSpinner.style.display = 'none';
+            elements.loadBtn.disabled = false;
+        }
+        
+        function showError(message, hint = '') {
+            elements.errorText.textContent = message;
+            elements.errorHint.textContent = hint;
+            elements.errorAlert.style.display = 'block';
+        }
+        
+        function hideError() {
+            elements.errorAlert.style.display = 'none';
+        }
+        
+        function updateStats(channel, fileCount) {
+            elements.totalFiles.textContent = fileCount;
+            elements.channelName.textContent = channel;
+            elements.lastUpdated.textContent = new Date().toLocaleTimeString('hi-IN');
+            elements.statsSection.style.display = 'flex';
+        }
+        
+        function showApiInfo() {
+            const modal = new bootstrap.Modal(document.getElementById('apiModal'));
+            modal.show();
+        }
+        
+        function copyApiUrl() {
+            navigator.clipboard.writeText(API_BASE_URL).then(() => {
+                alert('API URL copied to clipboard!');
+            });
+        }
+        
+        // ==================== FILE DISPLAY FUNCTIONS ====================
+        
+        function displayFiles(files) {
+            if (!files || files.length === 0) {
+                elements.emptyState.innerHTML = `
+                    <i class="fas fa-folder-open"></i>
+                    <h3>No Files Found</h3>
+                    <p>The channel might be empty or bot doesn't have access.</p>
+                    <div class="mt-3">
+                        <button class="btn btn-primary" onclick="loadFiles()">
+                            <i class="fas fa-redo"></i> Try Again
+                        </button>
+                    </div>
+                `;
+                elements.emptyState.style.display = 'block';
+                return;
+            }
+            
+            currentFiles = files;
+            elements.emptyState.style.display = 'none';
+            
+            let html = '';
+            
+            files.forEach((file, index) => {
+                const fileType = file.type || getFileTypeFromMime(file.mime_type) || 'unknown';
+                const iconInfo = fileIcons[fileType] || fileIcons.unknown;
+                const fileSize = formatFileSize(file.size);
+                const fileDate = formatDate(file.date);
+                const fileName = file.name || file.file_name || `File ${index + 1}`;
+                const caption = file.caption || '';
+                
+                html += `
+                    <div class="col-md-4 col-lg-3 mb-4">
+                        <div class="file-card">
+                            <div class="text-center">
+                                <div class="file-icon">
+                                    <i class="fas ${iconInfo.icon}" style="color: ${iconInfo.color}"></i>
+                                </div>
+                            </div>
+                            
+                            <h6 class="file-name" title="${fileName}">
+                                ${fileName.length > 50 ? fileName.substring(0, 50) + '...' : fileName}
+                            </h6>
+                            
+                            <div class="file-meta">
+                                <div><i class="fas fa-tag"></i> <span class="badge badge-type">${iconInfo.name}</span></div>
+                                <div><i class="fas fa-hdd"></i> ${fileSize}</div>
+                                <div><i class="far fa-calendar"></i> ${fileDate}</div>
+                                ${caption ? `<div class="mt-2"><i class="far fa-comment"></i> ${caption.substring(0, 60)}${caption.length > 60 ? '...' : ''}</div>` : ''}
+                            </div>
+                            
+                            <div class="d-grid gap-2 mt-3">
+                                <a href="${file.download_url}" 
+                                   class="btn btn-success btn-sm"
+                                   target="_blank"
+                                   download="${fileName}">
+                                    <i class="fas fa-download"></i> Download
+                                </a>
+                                <button onclick="previewFile('${file.download_url}', '${fileType}')" 
+                                        class="btn btn-outline-primary btn-sm">
+                                    <i class="fas fa-eye"></i> Preview
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            });
+            
+            elements.filesContainer.innerHTML = html;
+        }
+        
+        function previewFile(url, fileType) {
+            if (fileType === 'image' || fileType === 'video' || fileType === 'audio') {
+                window.open(url, '_blank');
+            } else {
+                // For documents, try to open in new tab
+                window.open(url, '_blank');
+            }
+        }
+        
+        // ==================== MAIN API FUNCTION ====================
+        
+        async function loadFiles() {
+            const channelInput = document.getElementById('channelInput').value.trim();
+            let channel = channelInput;
+            
+            // Add @ if not present
+            if (channel && !channel.startsWith('@')) {
+                channel = '@' + channel;
+                document.getElementById('channelInput').value = channel;
+            }
+            
+            if (!channel || channel === '@') {
+                showError('Please enter a channel username', 'Example: @Anon27199');
+                return;
+            }
+            
+            showLoading();
+            
+            try {
+                console.log(`Fetching from: ${API_BASE_URL}/api/files?channel=${encodeURIComponent(channel)}`);
+                
+                // Test API connection first
+                elements.apiStatus.textContent = '⏳';
+                
+                const testResponse = await fetch(`${API_BASE_URL}/api/test`);
+                const testData = await testResponse.json();
+                
+                if (testData.status === 'active') {
+                    elements.apiStatus.textContent = '✅';
+                    
+                    // Now fetch files
+                    const response = await fetch(`${API_BASE_URL}/api/files?channel=${encodeURIComponent(channel)}`);
+                    const data = await response.json();
+                    
+                    console.log('API Response:', data);
+                    
+                    if (data.success) {
+                        updateStats(data.channel, data.total_files || data.files.length);
+                        displayFiles(data.files);
+                    } else {
+                        showError(data.error || 'Failed to fetch files', data.hint || '');
+                        elements.emptyState.style.display = 'block';
+                    }
+                } else {
+                    showError('API is not responding properly', 'Check your backend URL');
+                    elements.apiStatus.textContent = '❌';
+                }
+                
+            } catch (error) {
+                console.error('Fetch error:', error);
+                showError(`Network Error: ${error.message}`, 'Check if backend API is running at: ' + API_BASE_URL);
+                elements.apiStatus.textContent = '❌';
+            } finally {
+                hideLoading();
+            }
+        }
+        
+        // ==================== INITIALIZATION ====================
+        
+        // Auto-load if channel is pre-filled
+        document.addEventListener('DOMContentLoaded', function() {
+            const channelInput = document.getElementById('channelInput');
+            if (channelInput.value && channelInput.value.trim() !== '' && channelInput.value !== '@') {
+                // Auto-load after 1 second
+                setTimeout(loadFiles, 1000);
+            }
+            
+            // Enter key support
+            channelInput.addEventListener('keypress', function(e) {
+                if (e.key === 'Enter') {
+                    loadFiles();
+                }
+            });
+        });
+        
+        // Check API status on page load
+        window.onload = async function() {
+            try {
+                const response = await fetch(`${API_BASE_URL}/api/test`);
+                const data = await response.json();
+                if (data.status === 'active') {
+                    elements.apiStatus.textContent = '✅';
+                }
+            } catch (error) {
+                console.log('API check failed on load');
+            }
+        };
+    </script>
+</body>
+</html>
